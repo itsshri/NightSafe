@@ -11,7 +11,7 @@ import MapDashboard from "./Component/MapDashboard";
 // import TravelStatusWrapper from "./components/TravelStatusWrapper";
 import { Navigation } from 'lucide-react';
 import FamilyLogin from "./Component/FamilyLogin";
-import FamSign from "./Component/Famsign";
+import FamSign from "./Component/FamSign";
 import Home from "./Component/Home";
 
 function Router() {
