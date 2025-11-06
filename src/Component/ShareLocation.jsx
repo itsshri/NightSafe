@@ -168,7 +168,6 @@ export default function ShareLocation({ userId }) {
           </motion.div>
         )}
       </div>
-      {/* 🚨 END OF ADDED SECTION */}
     </div>
   );
 }
