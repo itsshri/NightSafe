@@ -5,7 +5,7 @@ import { Navigation } from "lucide-react";
 import Lognav from "./Lognav";
 import {PhoneCall,Mail,MapPin,Github,Linkedin } from "lucide-react";
 
-const FamilySignup = () => {
+const FamSign = () => {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -253,4 +253,4 @@ const FamilySignup = () => {
   );
 };
 
-export default FamilySignup;
+export default FamSign;

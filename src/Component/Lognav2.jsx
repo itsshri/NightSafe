@@ -47,7 +47,7 @@ const Lognav2 = () => {
             </a>
 
             <a
-              href="/FamilySignup"
+              href="/famsign"
               className="px-4 py-2 bg-red-400 text-indigo-900 font-semibold rounded-lg shadow-md hover:bg-yellow-300 transition-all duration-300"
             >
               SignUp

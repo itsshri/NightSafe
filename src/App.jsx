@@ -11,7 +11,7 @@ import MapDashboard from "./Component/MapDashboard";
 // import TravelStatusWrapper from "./components/TravelStatusWrapper";
 import { Navigation } from 'lucide-react';
 import FamilyLogin from "./Component/FamilyLogin";
-import FamilySignup from "./Component/FamilySignup";
+import FamSign from "./Component/Famsign";
 import Home from "./Component/Home";
 
 function Router() {
@@ -22,7 +22,7 @@ function Router() {
 
       <Route path="/map" component={LiveTrackingMap2} /> {/* ✅ new route */}
       <Route path="/FamilyLogin" component={FamilyLogin}/>
-      <Route path="FamilySignup" component={FamilySignup}/>
+      <Route path="famsign" component={FamSign}/>
       <Route path="/home" component={Home}/>
       <Route path="/mapdashboard" component={MapDashboard}/>
       <Route component={NotFound} />

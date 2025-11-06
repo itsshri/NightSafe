@@ -96,7 +96,7 @@ const FamilyLogin = () => {
 
             <div className="extra-options">
               <a href="#">Forgot Password?</a>
-              <a href="/FamilySignup">Create New Account</a>
+              <a href="/famsign">Create New Account</a>
             </div>
           </form>
         </div>
