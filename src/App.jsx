@@ -17,7 +17,7 @@ import Home from "./Component/Home";
 function Router() {
   return (
   <Switch>
-      <Route path="/" component={FamilyLogin} />
+      <Route path="/" component={Home} />
       
 
       <Route path="/map" component={LiveTrackingMap2} /> {/* ✅ new route */}
