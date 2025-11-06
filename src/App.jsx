@@ -28,7 +28,7 @@ import { db } from "./firebaseConfig"; // ✅ adjust path if needed
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={FamSign} />
+      <Route path="/" component={Home} />
       <Route path="/map" component={LiveTrackingMap2} />
       <Route path="/FamilyLogin" component={FamilyLogin} />
       <Route path="/famsign" component={FamSign} />
