@@ -14,6 +14,7 @@ import { Navigation } from "lucide-react";
 import LiveRouteView from "./Component/LiveRouteView";
 import SafeCabVerification from "./Component/SafeCabVerification";
 import FindCabs from "./Component/FindCabs";
+import AdvancedSafetyMap from "./Component/AdvancedSafetyMap";
 
 import { useEffect } from "react"; // ✅ make sure useEffect is imported
 import { ref, set } from "firebase/database";
@@ -34,6 +35,7 @@ function Router() {
       <Route path="/liverouteview" component={LiveRouteView}/>
       <Route path="/safecab" component={SafeCabVerification}/>
       <Route path="/findcabs" component={FindCabs}/>
+      <Route path="/asm" component={AdvancedSafetyMap}/> 
       <Route component={NotFound} />
     </Switch>
   );
