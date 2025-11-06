@@ -14,6 +14,8 @@ import { Navigation } from "lucide-react";
 import LiveRouteView from "./Component/LiveRouteView";
 import SafeCabVerification from "./Component/SafeCabVerification";
 import FindCabs from "./Component/FindCabs";
+import Lognav from "./Component/Lognav";
+import Lognav2 from "./Component/Lognav2";
 import AdvancedSafetyMap from "./Component/AdvancedSafetyMap";
 
 import { useEffect } from "react"; // ✅ make sure useEffect is imported
@@ -36,6 +38,8 @@ function Router() {
       <Route path="/safecab" component={SafeCabVerification}/>
       <Route path="/findcabs" component={FindCabs}/>
       <Route path="/asm" component={AdvancedSafetyMap}/> 
+      <Route path="/lognav" component={Lognav}/>
+      <Route path="/lognav2" component={Lognav2}/> 
       <Route component={NotFound} />
     </Switch>
   );
