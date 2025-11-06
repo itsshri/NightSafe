@@ -22,7 +22,7 @@ function Router() {
 
       <Route path="/map" component={LiveTrackingMap2} /> {/* ✅ new route */}
       <Route path="/FamilyLogin" component={FamilyLogin}/>
-      <Route path="famsign" component={FamSign}/>
+      <Route path="/famsign" component={FamSign}/>
       <Route path="/home" component={Home}/>
       <Route path="/mapdashboard" component={MapDashboard}/>
       <Route component={NotFound} />
