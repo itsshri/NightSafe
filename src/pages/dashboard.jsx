@@ -4,7 +4,7 @@ import TravelStatusOverview from "../Component/TravelStatusOverview";
 import LiveTrackingMap from "../Component/LiveTrackingMap";
 import SafetyAlerts from "../Component/SafetyAlerts";
 import SafetyAnalytics from "../Component/SafetyAnalytics";
-import TechnicalSpecs from "../Component/TechnicalSpecs";
+import TechnicalSpecs from "../Component/AdvancedSafetyMap";
 import FloatingSOSButton from "../Component/FloatingSOSButton";
 import { useEffect, useState } from "react";
 

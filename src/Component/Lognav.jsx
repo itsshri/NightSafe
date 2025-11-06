@@ -47,7 +47,7 @@ const Lognav = () => {
             </a>
 
             <a
-              href="/famsign"
+              href="/FamilyLogin"
               className="px-4 py-2 bg-yellow-400 text-indigo-900 font-semibold rounded-lg shadow-md hover:bg-yellow-300 transition-all duration-300"
             >
               Member Login

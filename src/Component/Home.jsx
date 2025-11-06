@@ -1,7 +1,7 @@
 import React from "react";
 import SafetyAlerts from "./SafetyAlerts";
 import SafetyAnalytics from "./SafetyAnalytics";
-import TechnicalSpecs from "./TechnicalSpecs";
+import TechnicalSpecs from "./AdvancedSafetyMap";
 import TravelStatusOverview from "./TravelStatusOverview";
 import FloatingSOSButton from "./FloatingSOSButton";
 import { useState } from "react";

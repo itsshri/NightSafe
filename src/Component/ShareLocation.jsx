@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { ref, set, remove } from "firebase/database";
 import { db } from "../firebaseConfig";
 import { motion } from "framer-motion";
+import FindCabs from "./FindCabs";
 
 const contactsList = [
   { id: "mom", label: "Mom", color: "pink" },
@@ -58,65 +59,16 @@ export default function ShareLocation({ userId }) {
 
   return (
     <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-6 rounded-2xl shadow-2xl border border-gray-700 max-w-2xl mx-auto w-full">
-      <h2 className="text-2xl font-bold text-indigo-400 mb-1 text-center">
-        Share Your Location
-      </h2>
-      <p className="text-sm text-gray-400 mb-6 text-center">{status}</p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {contactsList.map((c) => {
-          const active = activeContacts[c.id];
-          return (
-            <motion.div
-              whileHover={{ scale: 1.03 }}
-              key={c.id}
-              className={`p-4 rounded-xl border transition-all cursor-pointer
-                ${
-                  active
-                    ? `border-${c.color}-400 bg-${c.color}-900/30`
-                    : "border-gray-700 bg-gray-800/60 hover:bg-gray-700/60"
-                }`}
-              onClick={() => toggleContact(c.id)}
-            >
-              <div className="flex justify-between items-center">
-                <span className="font-semibold text-lg">{c.label}</span>
-                <span
-                  className={`px-3 py-1 text-xs rounded-full ${
-                    active
-                      ? `bg-${c.color}-500/80 text-white`
-                      : "bg-gray-600/60 text-gray-200"
-                  }`}
-                >
-                  {active ? "Sharing" : "Stopped"}
-                </span>
-              </div>
-              <p className="text-xs text-gray-400 mt-2">
-                {active
-                  ? "Sending live location..."
-                  : "Tap to start sharing"}
-              </p>
-            </motion.div>
-          );
-        })}
-      </div>
-
-      {coords && (
-        <div className="mt-6 text-sm text-gray-300 text-center">
-          <p>
-            <span className="text-indigo-400">Lat:</span> {coords.lat.toFixed(5)}{" "}
-            <span className="text-indigo-400">Lng:</span> {coords.lng.toFixed(5)}
-          </p>
-          <p className="text-gray-500 text-xs">
-            Updated {new Date(coords.timestamp).toLocaleTimeString()}
-          </p>
-        </div>
-      )}
+<br></br>
+<br></br>
 
       {/* 🚨 NEW SECTION: SMS Location Sharing (added without modifying existing code) */}
       <div className="mt-10 border-t border-gray-700 pt-6">
         <h3 className="text-xl font-semibold text-red-400 mb-4 text-center">
-          Emergency Location Share via SMS
+          Share Your Location
         </h3>
+            <p className="text-sm text-gray-400 mb-6 text-center">{status}</p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[

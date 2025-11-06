@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import ShareLocation from "./ShareLocation";
 import FriendsMap from "./FriendsMap";
+import AppHeader from "./AppHeader";
 
 function MapDashboard() {
   const [sharing, setSharing] = useState(false);
@@ -9,15 +10,10 @@ function MapDashboard() {
   const friends = ["FriendA", "FriendB"]; // static friend IDs
 
   return (
+    <>
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white flex flex-col">
-      <header className="flex justify-between items-center px-8 py-4 bg-gray-950/80 shadow-md">
-        <h1 className="text-2xl font-bold text-indigo-400 tracking-wide">
-          NightSafety — Friend Tracker
-        </h1>
-        <div className="text-sm text-gray-400">
-          Logged in as <span className="text-white font-semibold">{userId}</span>
-        </div>
-      </header>
+    <AppHeader/>
+    
 
       <main className="flex-1 p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
         <ShareLocation userId={userId} sharing={sharing} setSharing={setSharing} />
@@ -28,6 +24,7 @@ function MapDashboard() {
         &copy; {new Date().getFullYear()} NightSafety | Built with ❤️ by Shrijith
       </footer>
     </div>
+    </>
   );
 }
 

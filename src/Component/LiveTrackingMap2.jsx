@@ -9,6 +9,7 @@ import { FiPhone, FiAlertTriangle, FiMapPin, FiSearch, FiMap } from "react-icons
 import "./NightSafeMap.css";
 import { Shield, PhoneCall, Mail, MapPin, HouseIcon, Github, Linkedin } from "lucide-react";
 import Lognav from "./Lognav";
+import AppHeader from "./AppHeader";
 
 import crimeIconUrl from "../icons/crime.png";
 import policeIconUrl from "../icons/police.png";
@@ -180,20 +181,7 @@ export default function App() {
   return (
     <>
       <div className="h-screen flex flex-col">
-        <header className="w-full bg-gradient-to-r from-indigo-700 via-indigo-900 to-purple-800 text-white flex items-center justify-between px-6 shadow-lg">
-          <h1 className="text-2xl font-bold tracking-wide">NightSafe Map</h1>
-          <a
-            href="/FamilyLogin"
-            className="px-4 py-2 bg-yellow-400 text-indigo-900 font-semibold rounded-lg shadow-md hover:bg-yellow-300 transition-all duration-300"
-          >
-            <button
-              href="/home"
-              className="flex items-center gap-2 bg-red-600 px-5 py-2 rounded-lg hover:bg-red-700 transition-all"
-            >
-              <HouseIcon /> Home
-            </button>
-          </a>
-        </header>
+       <AppHeader/>
 
         <div className="flex flex-1">
           <aside className="w-96 text-white p-6 flex flex-col gap-6 overflow-y-auto custom-sidebar">
@@ -386,25 +374,18 @@ export default function App() {
                   <h3 className="text-lg font-semibold text-yellow-300 mb-2">Contact Us</h3>
                   <div className="flex items-center gap-2">
                     <PhoneCall size={18} />
-                    <span className="text-sm">+91 94981 11191</span>
+                    <span className="text-sm">+91 6380368540</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Mail size={18} />
-                    <span className="text-sm">support@nightsafe.in</span>
+                    <span className="text-sm">shri@nightsafe.in</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <MapPin size={18} />
                     <span className="text-sm">Coimbatore, Tamil Nadu</span>
                   </div>
 
-                  <div className="flex items-center space-x-4 pt-2">
-                    <a href="https://github.com" target="_blank" className="hover:text-yellow-400 transition-transform transform hover:scale-110">
-                      <Github size={22} />
-                    </a>
-                    <a href="https://linkedin.com" target="_blank" className="hover:text-yellow-400 transition-transform transform hover:scale-110">
-                      <Linkedin size={22} />
-                    </a>
-                  </div>
+                 
                 </div>
               </div>
 

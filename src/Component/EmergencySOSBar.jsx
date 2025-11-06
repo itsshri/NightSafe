@@ -1,6 +1,7 @@
 import { AlertTriangle, Phone } from "lucide-react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { Feather } from 'lucide-react';
 
 export default function EmergencySOSBar() {
   const handleSOS = () => {
@@ -26,8 +27,8 @@ export default function EmergencySOSBar() {
             <button
               className="bg-white text-red-600 px-4 py-1 rounded-full text-sm font-semibold hover:bg-slate-100 transition-colors"
             >
-              <Phone className="w-3 h-3 mr-1 inline" />
-              SOS
+              <Feather className="w-3 h-5 mr-1 inline" />
+              New Update
             </button>
           </a>
         </div>

@@ -1,4 +1,4 @@
-import { Shield, Navigation, ChevronDown, LogOut } from "lucide-react";
+import { Shield, Navigation, ChevronDown, LogOut,Car,House } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import {PhoneCall,Mail,MapPin,Github,Linkedin } from "lucide-react";
@@ -103,7 +103,15 @@ export default function AppHeader() {
                   👤 Welcome Back! {loggedInName}
                 </p>
               )}
+              
             </div>
+            
+            <button
+              onClick={() => setLocation("/home")}
+              className="px-4 py-2 bg-orange-600 text-white rounded-lg font-semibold hover:bg-yellow-600"
+              >
+              <House />
+            </button>
           </div>
 
           {/* Right section */}
@@ -119,7 +127,7 @@ export default function AppHeader() {
 
             <button
               onClick={() => setLocation("/map")}
-              className="px-3 py-1 rounded-md bg-primary-600 text-white hover:bg-primary-700 transition"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-indigo-700"
               >
               <Navigation />
             </button>
@@ -128,10 +136,19 @@ export default function AppHeader() {
             
             <button
               onClick={() => setLocation("/mapdashboard")}
-              className="px-3 py-1 rounded-md bg-primary-600 text-white hover:bg-primary-700 transition"
+              className="px-4 py-2 bg-green-500 text-white rounded-lg font-semibold hover:bg-indigo-700"
               >
               <Shield />
             </button>
+
+            {/* Safe Cab */}
+            <button
+  onClick={() => (window.location.href = "/safecab")}
+  className="px-4 py-2 bg-yellow-600 text-white rounded-lg font-semibold hover:bg-indigo-700"
+>
+  <Car/>
+</button>
+
             {/* Profile Dropdown */}
             <div className="relative">
               <button
