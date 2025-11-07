@@ -76,9 +76,9 @@ export default function ShareLocation({ userId }) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[
-            { name: "Mom", number: "+911234567890" },
-            { name: "Dad", number: "+919876543210" },
-            { name: "Sister", number: "+910987654321" },
+            { name: "Mom", number: "+919384750414" },
+            { name: "Dad", number: "+916374627679" },
+            { name: "Friend1", number: "+916380368540" },
             { name: "Brother", number: "+910112233445" },
             { name: "Friend", number: "+910556677889" },
           ].map((c) => (

@@ -67,6 +67,7 @@ function Recenter({ when }) {
 export default function AdvancedSafetyMap({ userId = "ShrijithR", watchFriends = [] }) {
   // map + location
   const [myLocation, setMyLocation] = useState(null);
+  
   const [error, setError] = useState(null);
   const [center, setCenter] = useState([20.5937, 78.9629]);
 
