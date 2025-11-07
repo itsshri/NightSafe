@@ -12,6 +12,10 @@ const contactsList = [
   { id: "brother", label: "Brother", color: "green" },
   { id: "friends", label: "Friends", color: "blue" },
 ];
+const defaultLocation = {
+  lat: 10.9343, // Sri Krishna College of Technology latitude
+  lng: 76.9175  // Sri Krishna College of Technology longitude
+};
 
 export default function ShareLocation({ userId }) {
   const [activeContacts, setActiveContacts] = useState({});
