@@ -25,7 +25,7 @@ Secure family member login to access NightSafe services.
 
 ### 📝 2. Sign Up Page  
 Create a new family account by entering name, phone number, and city to join the NightSafe network.  
-![Sign Up Page](assets/Signup_Page.png)
+![Sign Up Page](assets/SignUp_Page.png)
 
 ---
 
@@ -48,7 +48,7 @@ Shows your real-time location and route using **OpenStreetMap**, highlighting:
 ### 🚕 5. Safe Cab Verification  
 Verify cab details, driver identity, and rating before your trip.  
 Share your ride info and QR with guardians for trip safety validation.  
-![Cab Verification](assets/cab_verification.png)
+![Cab Verification](assets/Cab_verification.png)
 
 ---
 
