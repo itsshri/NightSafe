@@ -19,19 +19,19 @@ The system allows family members to securely monitor the traveler’s journey, e
 
 ### 🔐 1. Login Page  
 Secure family member login to access NightSafe services.  
-![Login Page](./Login%20Page.png)
+![Login Page](./assets/Login%20Page.png)
 
 ---
 
 ### 📝 2. Sign Up Page  
 Create a new family account by entering name, phone number, and city to join the NightSafe network.  
-![Sign Up Page](./SignUp%20page.png)
+![Sign Up Page](./assets/SignUp%20page.png)
 
 ---
 
 ### 🗺️ 3. Dashboard Overview  
 After login, users can access live tracking, route sharing, SOS alerts, and community reporting in one place.  
-![Dashboard](./Dashboard.png)
+![Dashboard](./assets/Dashboard.png)
 
 ---
 
@@ -41,20 +41,20 @@ Shows your real-time location and route using **OpenStreetMap**, highlighting:
 - ⚠️ Caution Areas  
 - 🔴 High Crime Areas  
 - 🚨 Alert Regions  
-![Live Map](./Map.png)
+![Live Map](./assets/Map.png)
 
 ---
 
 ### 🚕 5. Safe Cab Verification  
 Verify cab details, driver identity, and rating before your trip.  
 Share your ride info and QR with guardians for trip safety validation.  
-![Cab Verification](./Cab%20Verification.png)
+![Cab Verification](./assets/Cab%20Verification.png)
 
 ---
 
 ### 🛰️ 6. Working Dashboard with Alerts  
 Demonstrates real-time alerts, community reports, and emergency sharing via map visualization.  
-![Dashboard Working](./Dashboard%20Working.png)
+![Dashboard Working](./assets/Dashboard%20Working.png)
 
 ---
 
