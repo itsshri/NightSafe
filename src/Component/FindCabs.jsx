@@ -169,7 +169,7 @@ const checkCab = () => {
   };
 
   const cabIcon = new L.Icon({
-    iconUrl: "https://i.pinimgproxy.com/?url=aHR0cHM6Ly9jZG4taWNvbnMtcG5nLmZsYXRpY29uLmNvbS8yNTYvNTkwMC81OTAwNDM3LnBuZw==&ts=1762491630&sig=5af9530a2aabd6fa271ed527c878e8909e4fcac09e17022a3072ed30b42ed7bf",
+    iconUrl: "taxi.png",
     iconSize: [38, 38],
   });
 
