@@ -48,7 +48,7 @@ Shows your real-time location and route using **OpenStreetMap**, highlighting:
 ### 🚕 5. Safe Cab Verification  
 Verify cab details, driver identity, and rating before your trip.  
 Share your ride info and QR with guardians for trip safety validation.  
-![Cab Verification](assets/Cab_verification.png)
+![Cab Verification](assets/Cab_Verification.png)
 
 ---
 
