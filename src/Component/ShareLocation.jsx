@@ -1,129 +1,220 @@
-// src/components/ShareLocation.jsx
-import React, { useEffect, useRef, useState } from "react";
-import { ref, set, remove } from "firebase/database";
-import { db } from "../firebaseConfig";
-import { motion } from "framer-motion";
-import FindCabs from "./FindCabs";
+import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  EyeOff,
+  Radar,
+  MapPin,
+  Activity,
+  Timer,
+  Camera,
+  Share2,
+} from "lucide-react";
 
-const contactsList = [
-  { id: "mom", label: "Mom", color: "pink" },
-  { id: "dad", label: "Dad", color: "yellow" },
-  { id: "sister", label: "Sister", color: "purple" },
-  { id: "brother", label: "Brother", color: "green" },
-  { id: "friends", label: "Friends", color: "blue" },
-];
-const defaultLocation = {
-  lat: 10.9343, // Sri Krishna College of Technology latitude
-  lng: 76.9175  // Sri Krishna College of Technology longitude
-};
-
-export default function ShareLocation({ userId }) {
-  const [activeContacts, setActiveContacts] = useState({});
-  const [status, setStatus] = useState("Waiting for GPS…");
-  const watchRef = useRef(null);
+export default function ShareLocation() {
+  const [active, setActive] = useState(false);
   const [coords, setCoords] = useState(null);
+  const [status, setStatus] = useState("Inactive");
 
-  // 📍 track your current coordinates continuously
-  useEffect(() => {
-    if (!("geolocation" in navigator)) {
-      setStatus("Geolocation not supported");
-      return;
-    }
-    const id = navigator.geolocation.watchPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setCoords({ lat: latitude, lng: longitude, timestamp: Date.now() });
-        setStatus("Location active");
-      },
-      (err) => setStatus("Error: " + err.message),
+  const watchRef = useRef(null);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+
+  const [elapsed, setElapsed] = useState(0);
+  const lastCoordsRef = useRef(null);
+  const [movement, setMovement] = useState("Unknown");
+  const [risk, setRisk] = useState("Low");
+
+  const [capturedImage, setCapturedImage] = useState(null);
+
+  /* ================= ACTIVATE ================= */
+  const activateMode = () => {
+    setActive(true);
+    setStatus("Monitoring surroundings");
+
+    watchRef.current = navigator.geolocation.watchPosition(
+      (pos) =>
+        setCoords({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        }),
+      console.error,
       { enableHighAccuracy: true }
     );
-    watchRef.current = id;
-    return () => navigator.geolocation.clearWatch(id);
-  }, []);
+  };
 
-  // 🚀 push location to Firebase whenever coords or activeContacts change
+  /* ================= DEACTIVATE ================= */
+  const deactivateMode = () => {
+    setActive(false);
+    setStatus("Inactive");
+    setElapsed(0);
+    setRisk("Low");
+    setCapturedImage(null);
+
+    if (watchRef.current)
+      navigator.geolocation.clearWatch(watchRef.current);
+  };
+
+  /* ================= TIMER ================= */
   useEffect(() => {
-    if (!coords) return;
-    Object.entries(activeContacts).forEach(([cid, sharing]) => {
-      const path = `locations/${cid}/${userId}`;
-      if (sharing) {
-        set(ref(db, path), coords);
-      } else {
-        remove(ref(db, path));
-      }
-    });
-  }, [coords, activeContacts]);
+    if (!active) return;
+    const t = setInterval(() => setElapsed((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [active]);
 
-  const toggleContact = (cid) =>
-    setActiveContacts((prev) => ({
-      ...prev,
-      [cid]: !prev[cid],
-    }));
+  /* ================= MOVEMENT ================= */
+  useEffect(() => {
+    if (!coords || !active) return;
+
+    if (lastCoordsRef.current) {
+      const dx = coords.lat - lastCoordsRef.current.lat;
+      const dy = coords.lng - lastCoordsRef.current.lng;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < 0.00001) setMovement("Standing");
+      else if (dist < 0.00008) setMovement("Walking");
+      else setMovement("Erratic");
+
+      if (elapsed > 60) setRisk("Medium");
+      if (elapsed > 120) setRisk("High");
+    }
+
+    lastCoordsRef.current = coords;
+  }, [coords, elapsed, active]);
+
+  /* ================= DROP EVIDENCE (CAPTURE IMAGE) ================= */
+  const dropEvidence = async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "user" },
+      audio: false,
+    });
+
+    const video = videoRef.current;
+    video.srcObject = stream;
+    video.muted = true;
+    video.playsInline = true;
+
+    await new Promise((res) => {
+      video.onloadedmetadata = () => {
+        video.play();
+        res();
+      };
+    });
+
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d").drawImage(video, 0, 0);
+
+    const imgData = canvas.toDataURL("image/jpeg");
+    setCapturedImage(imgData);
+
+    stream.getTracks().forEach((t) => t.stop());
+  };
+
+  /* ================= SHARE IMAGE ================= */
+  const shareImage = () => {
+    if (!coords) return;
+
+    const mapLink = `https://maps.google.com/?q=${coords.lat},${coords.lng}`;
+
+    const message = `
+🚨 EMERGENCY ALERT 🚨
+
+I am being followed.
+
+📍 Live Location:
+${mapLink}
+
+📷 Evidence image captured on my device.
+Please assist immediately.
+    `.trim();
+
+    const policeNumber = "919999999999"; // replace with real number
+    window.open(
+      `https://wa.me/${policeNumber}?text=${encodeURIComponent(message)}`,
+      "_blank"
+    );
+  };
 
   return (
-    <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-6 rounded-2xl shadow-2xl border border-gray-700 max-w-2xl mx-auto w-full">
+    <>
+      <AnimatePresence>
+        {active && (
+          <motion.div
+            className="fixed inset-0 pointer-events-none z-[5]
+            bg-gradient-to-br from-red-950/20 via-transparent to-red-950/20"
+            animate={{ opacity: Math.min(0.6, elapsed / 300) }}
+          />
+        )}
+      </AnimatePresence>
 
-<br></br>
-<br></br>
-
-      {/* 🚨 NEW SECTION: SMS Location Sharing (added without modifying existing code) */}
-      <div className="mt-10 border-t border-gray-700 pt-6">
-        <h3 className="text-xl font-semibold text-red-400 mb-4 text-center">
-          Share Your Location
-        </h3>
-            <p className="text-sm text-gray-400 mb-6 text-center">{status}</p>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {[
-            { name: "Mom", number: "+919384750414" },
-            { name: "Dad", number: "+916374627679" },
-            { name: "Friend1", number: "+916380368540" },
-            { name: "Brother", number: "+910112233445" },
-            { name: "Friend", number: "+910556677889" },
-          ].map((c) => (
-            <motion.button
-              key={c.number}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              disabled={!coords}
-              onClick={() => {
-                if (!coords) return;
-                const msg = encodeURIComponent(
-                  `🚨 SOS! My current location:\nhttps://maps.google.com/?q=${coords.lat},${coords.lng}`
-                );
-                window.location.href = `sms:${c.number}?body=${msg}`;
-              }}
-              className={`p-4 rounded-xl border transition-all ${
-                coords
-                  ? "bg-gradient-to-r from-red-600 via-pink-600 to-red-700 hover:shadow-[0_0_25px_rgba(244,63,94,0.7)]"
-                  : "bg-gray-700 opacity-50 cursor-not-allowed"
-              }`}
-            >
-              <div className="flex flex-col items-center">
-                <span className="text-lg font-semibold">{c.name}</span>
-                <span className="text-xs text-gray-200 mt-1">{c.number}</span>
-              </div>
-            </motion.button>
-          ))}
+      <div className="max-w-90px mt-6 rounded-3xl p-6 bg-black border border-red-500/30 text-white">
+        {/* HEADER */}
+        <div className="flex items-center gap-3 mb-4">
+          <EyeOff className="text-red-400" />
+          <h3 className="font-bold text-lg">I’m Being Followed</h3>
         </div>
 
-        {coords && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mt-6 text-center text-sm text-gray-300"
+        <p className="text-sm text-red-400 mb-3">{status}</p>
+
+        {active && (
+          <div className="grid grid-cols-2 gap-2 text-xs mb-4">
+            <Info icon={Activity} label={`Movement: ${movement}`} />
+            <Info icon={Radar} label={`Risk: ${risk}`} />
+            <Info icon={Timer} label={`Time: ${elapsed}s`} />
+            <Info icon={MapPin} label="GPS Locked" />
+          </div>
+        )}
+
+        <button
+          onClick={active ? deactivateMode : activateMode}
+          className="w-full py-3 rounded-xl bg-red-600 font-bold mb-4"
+        >
+          {active ? "Deactivate Safely" : "Activate Silently"}
+        </button>
+
+        {/* DROP EVIDENCE */}
+        {active && !capturedImage && (
+          <button
+            onClick={dropEvidence}
+            className="w-full py-3 rounded-xl bg-white/10 flex items-center justify-center gap-2"
           >
-            <p>
-              <span className="text-indigo-400">Lat:</span> {coords.lat.toFixed(5)}{" "}
-              <span className="text-indigo-400">Lng:</span> {coords.lng.toFixed(5)}
-            </p>
-            <p className="text-gray-500 text-xs mt-1">
-              Tap a contact to open your SMS app with this location pre-filled
-            </p>
-          </motion.div>
+            <Camera className="h-4 w-4" />
+            Drop Evidence
+          </button>
+        )}
+
+        {/* IMAGE PREVIEW */}
+        {capturedImage && (
+          <div className="mt-4 space-y-3">
+            <img
+              src={capturedImage}
+              className="rounded-xl border border-red-500/40"
+              alt="Evidence"
+            />
+            <button
+              onClick={shareImage}
+              className="w-full py-3 rounded-xl bg-green-600 font-bold flex items-center justify-center gap-2 animate-pulse"
+            >
+              <Share2 className="h-4 w-4" />
+              Share Image
+            </button>
+          </div>
         )}
       </div>
+
+      {/* hidden helpers */}
+      <video ref={videoRef} className="hidden" />
+      <canvas ref={canvasRef} className="hidden" />
+    </>
+  );
+}
+
+function Info({ icon: Icon, label }) {
+  return (
+    <div className="flex items-center gap-2 p-2 rounded bg-white/5">
+      <Icon className="h-4 w-4 text-red-400" />
+      <span>{label}</span>
     </div>
   );
 }

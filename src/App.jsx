@@ -17,10 +17,13 @@ import FindCabs from "./Component/FindCabs";
 import Lognav from "./Component/Lognav";
 import Lognav2 from "./Component/Lognav2";
 import AdvancedSafetyMap from "./Component/AdvancedSafetyMap";
+import Real from "./pages/Real";
 
 import { useEffect } from "react"; // ✅ make sure useEffect is imported
 import { ref, set } from "firebase/database";
 import { db } from "./firebaseConfig"; // ✅ adjust path if needed
+import { DestinationProvider } from "./pages/DestinationContext";
+
 
 
 
@@ -40,6 +43,11 @@ function Router() {
       <Route path="/asm" component={AdvancedSafetyMap}/> 
       <Route path="/lognav" component={Lognav}/>
       <Route path="/lognav2" component={Lognav2}/> 
+      <DestinationProvider>
+      <Route path="/real" component={Real}/> 
+      </DestinationProvider>
+      
+
       <Route component={NotFound} />
     </Switch>
   );

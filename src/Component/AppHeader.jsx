@@ -1,5 +1,6 @@
 import { Shield, Navigation, ChevronDown, LogOut,Car,House } from "lucide-react";
 import { useLocation } from "wouter";
+import { Circle } from 'lucide-react';
 import { useState, useEffect } from "react";
 import {PhoneCall,Mail,MapPin,Github,Linkedin } from "lucide-react";
 
@@ -147,6 +148,15 @@ export default function AppHeader() {
   className="px-4 py-2 bg-yellow-600 text-white rounded-lg font-semibold hover:bg-indigo-700"
 >
   <Car/>
+</button>
+
+
+            {/* Circle Safety */}
+            <button
+  onClick={() => (window.location.href = "/real")}
+  className="px-4 py-2 bg-yellow-600 text-white rounded-lg font-semibold hover:bg-indigo-700"
+>
+  <Circle/>
 </button>
 
             {/* Profile Dropdown */}
