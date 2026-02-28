@@ -157,7 +157,7 @@ ${locationLink}
 
         setSoundLevel(Math.round(avg));
 
-        if (avg > 100 && !threatDetected) {
+        if (avg > 50 && !threatDetected) {
           setThreatDetected(true);
           setBuddyActive(true);
           stopMic();

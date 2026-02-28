@@ -1,8 +1,19 @@
-import { Shield, Navigation, ChevronDown, LogOut,Car,House } from "lucide-react";
+import {
+  Shield,
+  Navigation,
+  ChevronDown,
+  LogOut,
+  Car,
+  House,
+  Circle,
+  PhoneCall,
+  Mail,
+  MapPin,
+  Github,
+  Linkedin,
+} from "lucide-react";
 import { useLocation } from "wouter";
-import { Circle } from 'lucide-react';
 import { useState, useEffect } from "react";
-import {PhoneCall,Mail,MapPin,Github,Linkedin } from "lucide-react";
 
 export default function AppHeader() {
   const [open, setOpen] = useState(false);
@@ -18,13 +29,11 @@ export default function AppHeader() {
     }
   }, []);
 
-  // ✅ Load logged-in name on mount
   useEffect(() => {
     const name = localStorage.getItem("loggedInUser");
     if (name) setLoggedInName(name);
   }, []);
 
-  // ✅ Watch for logged-in name changes
   useEffect(() => {
     const interval = setInterval(() => {
       const name = localStorage.getItem("loggedInUser");
@@ -33,7 +42,6 @@ export default function AppHeader() {
     return () => clearInterval(interval);
   }, [loggedInName]);
 
-  // ✅ Get live browser location
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -44,22 +52,15 @@ export default function AppHeader() {
               `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
             );
             const data = await res.json();
-            if (data.city) {
-              setCurrentCity(data.city);
-            } else if (data.locality) {
-              setCurrentCity(data.locality);
-            } else {
-              setCurrentCity("Unknown City");
-            }
+            if (data.city) setCurrentCity(data.city);
+            else if (data.locality) setCurrentCity(data.locality);
+            else setCurrentCity("Unknown City");
           } catch (err) {
             console.error("Location fetch failed", err);
             setCurrentCity("Location unavailable");
           }
         },
-        (err) => {
-          console.warn("Location permission denied:", err);
-          setCurrentCity("Location permission denied");
-        }
+        () => setCurrentCity("Location permission denied")
       );
     } else {
       setCurrentCity("Geolocation not supported");
@@ -86,128 +87,137 @@ export default function AppHeader() {
     setLocation("/FamilyLogin");
   };
 
+  const iconBtn =
+    "p-2.5 bg-slate-800 border border-slate-600 text-slate-200 rounded-xl hover:bg-indigo-600 hover:border-indigo-500 hover:text-white transition-all duration-200 shadow-sm hover:shadow-indigo-500/20";
+
   return (
-    <header className="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
+    <header className="sticky top-0 z-50 backdrop-blur-xl bg-slate-900/80 border-b border-slate-700/50 shadow-lg shadow-black/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-4">
-          {/* Left section */}
+        <div className="flex justify-between items-center py-3">
+
+          {/* LEFT SECTION */}
           <div className="flex items-center space-x-3">
-            <div className="bg-primary-600 p-2 rounded-lg">
+            <div className="bg-gradient-to-br from-indigo-600 to-purple-600 p-2.5 rounded-xl shadow-md">
               <Shield className="text-white w-6 h-6" />
             </div>
+
             <div>
-              <h1 className="text-xl font-bold text-white">NightSafe</h1>
-              <p className="text-sm text-slate-400">Night Travel Safety System</p>
+              <h1 className="text-xl font-bold tracking-wide text-white">
+                NightSafe
+              </h1>
+              <p className="text-xs tracking-wide text-slate-400 uppercase">
+                Night Travel Safety System
+              </p>
 
               {loggedInName && (
-                <p className="mt-1 text-black font-semibold text-sm bg-yellow-400 px-3 py-1 rounded-full inline-block shadow-md animate-pulse">
+                <p className="mt-2 text-xs font-semibold text-yellow-900 bg-yellow-300/90 px-3 py-1 rounded-full inline-flex items-center gap-1 shadow-sm">
                   👤 Welcome Back! {loggedInName}
                 </p>
               )}
-              
             </div>
-            
-            <button
-              onClick={() => setLocation("/home")}
-              className="px-4 py-2 bg-orange-600 text-white rounded-lg font-semibold hover:bg-yellow-600"
-              >
-              <House />
+
+            <button onClick={() => setLocation("/home")} className={iconBtn}>
+              <House size={18} />
             </button>
           </div>
 
-          {/* Right section */}
-          <div className="flex items-center space-x-4">
-            <div className="hidden md:flex flex-col items-start space-y-1">
+          {/* RIGHT SECTION */}
+          <div className="flex items-center space-x-3">
+
+            {/* Live tracking */}
+            <div className="hidden md:flex flex-col items-start">
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <div className="w-2.5 h-2.5 bg-emerald-400 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.8)] animate-pulse"></div>
                 <span className="text-sm text-slate-300">Live Tracking</span>
               </div>
             </div>
 
-            {/* Map button */}
-
-            <button
-              onClick={() => setLocation("/map")}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-indigo-700"
-              >
-              <Navigation />
+            {/* Buttons */}
+            <button onClick={() => setLocation("/map")} className={iconBtn}>
+              <Navigation size={18} />
             </button>
 
-            {/* Dashboard */}
-            
             <button
               onClick={() => setLocation("/mapdashboard")}
-              className="px-4 py-2 bg-green-500 text-white rounded-lg font-semibold hover:bg-indigo-700"
-              >
-              <Shield />
+              className={iconBtn}
+            >
+              <Shield size={18} />
             </button>
 
-            {/* Safe Cab */}
             <button
-  onClick={() => (window.location.href = "/safecab")}
-  className="px-4 py-2 bg-yellow-600 text-white rounded-lg font-semibold hover:bg-indigo-700"
->
-  <Car/>
-</button>
+              onClick={() => (window.location.href = "/safecab")}
+              className={iconBtn}
+            >
+              <Car size={18} />
+            </button>
 
-
-            {/* Circle Safety */}
             <button
-  onClick={() => (window.location.href = "/real")}
-  className="px-4 py-2 bg-yellow-600 text-white rounded-lg font-semibold hover:bg-indigo-700"
->
-  <Circle/>
-</button>
+              onClick={() => (window.location.href = "/real")}
+              className={iconBtn}
+            >
+              <Circle size={18} />
+            </button>
 
-            {/* Profile Dropdown */}
+            <button
+              onClick={() => (window.location.href = "/flow")}
+              className={iconBtn}
+            >
+              <Circle size={18} />
+            </button>
+
+            {/* PROFILE DROPDOWN */}
             <div className="relative">
               <button
                 onClick={() => setOpen(!open)}
-                className="flex items-center gap-2 px-3 py-1 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition focus:outline-none"
-                >
-                <span className="text-lg font-semibold">
-                  {userName ? `Connect with family` : "Welcome"}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-800 border border-slate-600 text-white hover:bg-indigo-600 hover:border-indigo-500 transition-all duration-200 shadow-sm"
+              >
+                <span className="text-sm font-semibold">
+                  {userName ? "Connect with family" : "Welcome"}
                 </span>
+
                 <img
                   src="usergrp.png"
                   alt="User Profile"
-                  className="w-8 h-8 rounded-full"
-                  />
+                  className="w-8 h-8 rounded-full border border-slate-500"
+                />
+
                 <ChevronDown
                   className={`w-4 h-4 transition-transform ${
                     open ? "rotate-180" : ""
                   }`}
-                  />
+                />
               </button>
 
               {open && (
-                <div className="absolute right-0 mt-2 w-44 bg-slate-800 border border-slate-700 rounded-lg shadow-lg z-20 animate-fadeIn">
+                <div className="absolute right-0 mt-3 w-52 bg-slate-900/95 backdrop-blur-lg border border-slate-700 rounded-xl shadow-2xl shadow-black/40 z-20 overflow-hidden">
                   {familyMembers.map((member, index) => (
                     <button
-                    key={index}
-                    onClick={() => handleSelect(member)}
-                    className="w-full text-left px-4 py-2 text-sm text-slate-200 hover:bg-indigo-600 hover:text-white transition"
+                      key={index}
+                      onClick={() => handleSelect(member)}
+                      className="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition-all duration-150"
                     >
                       {member.name}
                     </button>
                   ))}
 
-                  <div className="border-t border-slate-700 my-1"></div>
+                  <div className="border-t border-slate-700"></div>
 
                   <button
                     onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-600 hover:text-white transition flex items-center gap-2"
-                    >
+                    className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-600 hover:text-white transition flex items-center gap-2"
+                  >
                     <LogOut className="w-4 h-4" /> Logout
                   </button>
                 </div>
               )}
             </div>
-              {currentCity && (
-                <span className="text-xl text-black font-semibold text-sm bg-yellow-400 px-3 py-1 rounded-full inline-block shadow-md animate-pulse">
-                  📍 {currentCity}
-                </span>
-              )}
+
+            {/* LOCATION */}
+            {currentCity && (
+              <span className="text-xs font-semibold text-amber-900 bg-amber-300 px-3 py-1 rounded-full shadow-sm border border-amber-200">
+                📍 {currentCity}
+              </span>
+            )}
           </div>
         </div>
       </div>

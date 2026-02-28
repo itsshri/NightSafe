@@ -1,248 +1,277 @@
-import React, { useEffect, useState } from "react";
-import { ref, onValue, set, push, get, query, limitToLast, remove } from "firebase/database";
-import { db } from "../firebaseConfig";
-import { motion } from "framer-motion";
-import QRCode from "react-qr-code";
-import { MapContainer, TileLayer, Marker, Popup, CircleMarker } from "react-leaflet";
+import React, { useEffect, useState, useMemo } from "react";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  Polyline,
+  CircleMarker,
+} from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-export default function FindCabs({ userId = "ShrijithR" }) {
-  const [cabId, setCabId] = useState("");
-  const [verified, setVerified] = useState(null);
-  const [cabDetails, setCabDetails] = useState(null);
-  const [statusMsg, setStatusMsg] = useState("");
-  const [myLoc, setMyLoc] = useState(null);
-  const [tripId, setTripId] = useState(null);
-  const [tripActive, setTripActive] = useState(false);
-  const [feedback, setFeedback] = useState("");
-  const [history, setHistory] = useState([]);
+export default function FindCabs() {
 
-  // 🛰️ Get current location
+  const [myLoc, setMyLoc] = useState(null);
+  const [providers, setProviders] = useState([]);
+  const [selectedProvider, setSelectedProvider] = useState(null);
+
+  // ================= LOCATION =================
   useEffect(() => {
-    if (!("geolocation" in navigator)) return;
     const id = navigator.geolocation.watchPosition(
-      (pos) => setMyLoc([pos.coords.latitude, pos.coords.longitude]),
-      (err) => console.warn(err),
+      (p) => setMyLoc([p.coords.latitude, p.coords.longitude]),
+      console.warn,
       { enableHighAccuracy: true }
     );
     return () => navigator.geolocation.clearWatch(id);
   }, []);
 
-  // 📜 Fetch last few trips from Firebase
-  useEffect(() => {
-    const tripsRef = query(ref(db, `cabTrips/${userId}`), limitToLast(5));
-    onValue(tripsRef, (snap) => {
-      const val = snap.val() || {};
-      const arr = Object.entries(val)
-        .filter(([key, t]) => t.cabId && t.startTime)
-        .map(([key, t]) => ({ ...t, tripKey: key })) // keep key for deletion
-        .reverse();
-      setHistory(arr);
+  // ================= CALL TAXI LIST =================
+  const callTaxis = [
+    { name: "Fastrack Cab", phone: "04222888999" },
+    { name: "Red Taxi", phone: "04224567890" },
+    { name: "Friends Call Taxi", phone: "08883323333" },
+    { name: "Jee Jee Cabs", phone: "09443155403" },
+  ];
+
+  // ================= PROVIDERS =================
+  const providerConfig = [
+    {
+      name: "Uber",
+      base: 70,
+      perKm: 14,
+      speed: 35,
+      url: "https://m.uber.com",
+    },
+    {
+      name: "Ola",
+      base: 65,
+      perKm: 13,
+      speed: 33,
+      url: "https://book.olacabs.com",
+    },
+    {
+      name: "Rapido",
+      base: 40,
+      perKm: 9,
+      speed: 42,
+      url: "https://www.rapido.bike",
+    },
+  ];
+
+  // ================= DISTANCE =================
+  const distanceKm = (a, b) => {
+    const R = 6371;
+    const dLat = (b[0] - a[0]) * Math.PI / 180;
+    const dLng = (b[1] - a[1]) * Math.PI / 180;
+
+    const x =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(a[0] * Math.PI / 180) *
+      Math.cos(b[0] * Math.PI / 180) *
+      Math.sin(dLng / 2) ** 2;
+
+    return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+  };
+
+  // ================= DRIVER GENERATION =================
+  const generateDriver = (center) => {
+    const radius = 1.5 + Math.random() * 2.5;
+    const angle = Math.random() * 2 * Math.PI;
+
+    const latOffset = (radius / 111) * Math.cos(angle);
+    const lngOffset =
+      (radius / (111 * Math.cos(center[0] * Math.PI / 180))) *
+      Math.sin(angle);
+
+    return [center[0] + latOffset, center[1] + lngOffset];
+  };
+
+  // ================= FIND RIDES =================
+  const compareRides = () => {
+    if (!myLoc) return;
+
+    const list = providerConfig.map((p, i) => {
+      const driver = generateDriver(myLoc);
+      const dist = distanceKm(myLoc, driver);
+
+      return {
+        ...p,
+        id: i,
+        driver,
+        distance: dist,
+        eta: Math.ceil((dist / p.speed) * 60),
+        fare: Math.round(p.base + p.perKm * 5),
+      };
     });
-  }, [userId]);
 
- // 🧾 Verify cab ID
-const checkCab = () => {
-  if (!cabId.trim()) {
-    setStatusMsg("Please enter vehicle number.");
-    return;
-  }
+    setProviders(list);
+  };
 
-  const idFormatted = cabId.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-  const r = ref(db, `trustedCabs/${idFormatted}`);
+  const bestProvider = useMemo(() => {
+    if (!providers.length) return null;
+    return [...providers].sort((a, b) => a.eta - b.eta)[0];
+  }, [providers]);
 
-  get(r).then((snap) => {
-    const val = snap.val();
-    if (val) {
-      // ✅ Trusted cab
-      setVerified(true);
-      setCabDetails(val);
-      setStatusMsg("Verified Safe Cab ✓");
+  // ================= LIVE TRACKING =================
+  useEffect(() => {
+    if (!selectedProvider || !myLoc) return;
 
-      // log trip AFTER verification confirmed
-      const tripRef = push(ref(db, `cabTrips/${userId}`));
-      set(tripRef, {
-        cabId: idFormatted,
-        verified: true,
-        startTime: Date.now(),
-        status: "active",
-        driver: val,
-      }).then(() => {
-        setTripId(tripRef.key);
-        setTimeout(() => setTripActive(true), 500);
+    const interval = setInterval(() => {
+      setSelectedProvider((prev) => {
+        if (!prev) return prev;
+
+        const latDiff = myLoc[0] - prev.driver[0];
+        const lngDiff = myLoc[1] - prev.driver[1];
+        const dist = Math.sqrt(latDiff ** 2 + lngDiff ** 2);
+
+        if (dist < 0.00025) return prev;
+
+        const step = Math.max(0.0002, Math.min(0.001, prev.distance / 200));
+
+        const newDriver = [
+          prev.driver[0] + (latDiff / dist) * step,
+          prev.driver[1] + (lngDiff / dist) * step,
+        ];
+
+        const d = distanceKm(myLoc, newDriver);
+
+        return {
+          ...prev,
+          driver: newDriver,
+          distance: d,
+          eta: Math.ceil((d / prev.speed) * 60),
+        };
       });
-    } else {
-      // ⚠️ Unverified cab
-      setVerified(false);
-      setCabDetails(null);
-      setStatusMsg("⚠️ Cab not registered! Alert sent.");
-
-      // 🚨 Push alert to Firebase
-      const alertsRef = push(ref(db, "alerts"));
-      set(alertsRef, {
-        userId,
-        msg: `Unverified cab boarded: ${idFormatted}`,
-        lat: myLoc?.[0] ?? null,
-        lng: myLoc?.[1] ?? null,
-        type: "CAB",
-        ts: Date.now(),
-      });
-
-      // 🚕 Log unverified trip too (so it appears in history)
-      const tripRef = push(ref(db, `cabTrips/${userId}`));
-      set(tripRef, {
-        cabId: idFormatted,
-        verified: false,
-        startTime: Date.now(),
-        status: "unverified",
-        driver: { driverName: "Unknown", company: "Unregistered", rating: "N/A", phone: "N/A" },
-      }).then(() => {
-        setTripId(tripRef.key);
-        setTripActive(false);
-      });
-
-      // 📱 Send SMS alert
-      const smsBody = encodeURIComponent(
-        `⚠️ ${userId} boarded unverified cab: ${idFormatted}. Check immediately.`
-      );
-      window.open(`sms:+911234567890,+919876543210?body=${smsBody}`, "_self");
-    }
-  });
-};
-
-  // 🚦 End current trip
-  const endTrip = () => {
-    if (!tripId) return;
-    set(ref(db, `cabTrips/${userId}/${tripId}/status`), "completed");
-    setTripActive(false);
-    setStatusMsg("✅ Trip ended safely.");
-  };
-
-  // 🗑️ Delete a trip
-  const deleteTrip = (tripKey) => {
-    if (!tripKey) return;
-    remove(ref(db, `cabTrips/${userId}/${tripKey}`))
-      .then(() => setStatusMsg("🗑️ Trip deleted successfully."))
-      .catch((e) => console.error("Delete failed:", e));
-  };
-
-  // 📱 Share cab details via WhatsApp
-  const shareCabInfo = () => {
-    if (!cabDetails) return;
-    const msg = encodeURIComponent(
-      `🚖 Cab Details:\nCab: ${cabId}\nDriver: ${cabDetails.driverName}\nPhone: ${cabDetails.phone}\nCompany: ${cabDetails.company}\nLocation: https://maps.google.com/?q=${myLoc?.[0]},${myLoc?.[1]}`
-    );
-    window.open(`https://wa.me/?text=${msg}`, "_blank");
-  };
-
-  // 🧠 Submit safety feedback
-  const submitFeedback = () => {
-    if (!feedback || !tripId) return;
-    set(ref(db, `cabTrips/${userId}/${tripId}/feedback`), feedback);
-    setFeedback("");
-    setStatusMsg("✅ Feedback saved. Thank you!");
-  };
-
-  // 🗺️ FIND NEARBY CABS SECTION (ADDED WITHOUT CHANGING ANYTHING ABOVE)
-  const [cabs, setCabs] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  const findNearbyCabs = () => {
-    if (!myLoc) {
-      alert("Enable location to find nearby cabs!");
-      return;
-    }
-    setLoading(true);
-    const randomCabs = Array.from({ length: 5 }, (_, i) => ({
-      id: i + 1,
-      lat: myLoc[0] + (Math.random() - 0.5) * 0.01,
-      lng: myLoc[1] + (Math.random() - 0.5) * 0.01,
-      driver: `Driver ${i + 1}`,
-      rating: (3.5 + Math.random() * 1.5).toFixed(1),
-      distance: (Math.random() * 2 + 0.3).toFixed(2),
-    }));
-    setTimeout(() => {
-      setCabs(randomCabs);
-      setLoading(false);
     }, 1000);
-  };
 
+    return () => clearInterval(interval);
+  }, [selectedProvider, myLoc]);
+
+  // ================= ICONS =================
   const cabIcon = new L.Icon({
     iconUrl: "taxi.png",
-    iconSize: [38, 38],
+    iconSize: [34, 34],
   });
 
   const userIcon = new L.Icon({
     iconUrl: "https://cdn-icons-png.flaticon.com/512/149/149060.png",
-    iconSize: [36, 36],
+    iconSize: [30, 30],
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-950 text-white flex flex-col items-center justify-center p-6">
-      {/* YOUR ORIGINAL CODE */}
-      {/* (No modification done inside your main return content) */}
+    <div className="min-h-screen bg-black flex justify-center p-4">
 
-      {/* ===================== FIND NEARBY CABS SECTION ===================== */}
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-3xl bg-gray-900/60 border border-gray-800 rounded-2xl shadow-xl mt-10 p-5"
-      >
-        <h3 className="text-xl font-bold text-yellow-400 mb-3 text-center">
-          🚕 Find Nearby Cabs
-        </h3>
-        <p className="text-gray-400 text-sm text-center mb-4">
-          Discover available cabs near your current location in real-time.
-        </p>
+      <div className="w-full max-w-6xl bg-gray-950 rounded-3xl overflow-hidden border border-gray-800 shadow-2xl">
 
-        <div className="flex justify-center mb-4">
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={findNearbyCabs}
-            className="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-black rounded-full font-semibold shadow-lg transition"
-          >
-            {loading ? "Searching..." : "Find Nearby Cabs"}
-          </motion.button>
+        {/* HEADER */}
+        <div className="p-4 bg-black border-b border-gray-800">
+          <h1 className="text-xl font-bold text-yellow-400">
+            NightSafe PRO MAX
+          </h1>
         </div>
 
-        {myLoc && (
-          <div className="rounded-xl overflow-hidden border border-gray-700 shadow-md">
-            <MapContainer
-              center={myLoc}
-              zoom={14}
-              style={{ height: "60vh", width: "100%" }}
-              className="rounded-xl"
-            >
+        {/* MAP CARD */}
+        <div className="h-[55vh] relative">
+          {myLoc && (
+            <MapContainer center={myLoc} zoom={14} style={{ height: "100%", width: "100%" }}>
               <TileLayer
-                attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
+                attribution="&copy; OpenStreetMap"
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
-              {/* Your Location */}
+
               <Marker position={myLoc} icon={userIcon}>
-                <Popup>You are here</Popup>
+                <Popup>You</Popup>
               </Marker>
+
+              {selectedProvider && (
+                <>
+                  <Marker position={selectedProvider.driver} icon={cabIcon} />
+                  <Polyline
+                    positions={[selectedProvider.driver, myLoc]}
+                    pathOptions={{ color: "yellow" }}
+                  />
+                </>
+              )}
+
               <CircleMarker
                 center={myLoc}
                 radius={25}
-                pathOptions={{ color: "blue", fillColor: "#3b82f6", fillOpacity: 0.15 }}
+                pathOptions={{ color: "#22c55e", fillOpacity: 0.2 }}
               />
-
-              {/* Nearby Cabs */}
-              {cabs.map((cab) => (
-                <Marker key={cab.id} position={[cab.lat, cab.lng]} icon={cabIcon}>
-                  <Popup>
-                    <div className="text-sm">
-                      <p className="font-bold text-yellow-500">{cab.driver}</p>
-                      <p>⭐ {cab.rating} | {cab.distance} km away</p>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
             </MapContainer>
+          )}
+
+          {/* FLOATING DRIVER CARD */}
+          {selectedProvider && (
+            <div className="absolute top-3 left-3 bg-black/80 backdrop-blur p-3 rounded-xl border border-gray-700">
+              🚕 {selectedProvider.name} Driver<br />
+              {selectedProvider.distance.toFixed(2)} km • ETA {selectedProvider.eta} min
+            </div>
+          )}
+        </div>
+
+        {/* BOTTOM PANEL */}
+        <div className="p-4 bg-black space-y-3">
+
+          <button
+            onClick={compareRides}
+            className="w-full bg-yellow-500 text-black py-3 rounded-xl font-bold"
+          >
+            Find Nearby Rides
+          </button>
+
+          {/* RIDE CARDS */}
+          <div className="grid md:grid-cols-3 gap-2">
+            {providers.map((p) => (
+              <div
+                key={p.id}
+                onClick={() => setSelectedProvider(p)}
+                className={`p-3 rounded-xl border cursor-pointer ${
+                  selectedProvider?.id === p.id
+                    ? "border-yellow-400 bg-yellow-500/10"
+                    : "border-gray-700 bg-gray-900"
+                }`}
+              >
+                <h3 className="font-bold">
+                  {p.name}
+                  {bestProvider?.id === p.id && (
+                    <span className="text-green-400 text-xs ml-2">★ Fastest</span>
+                  )}
+                </h3>
+                <p className="text-xs text-gray-400">
+                  ETA {p.eta} min • ₹{p.fare}
+                </p>
+
+                {/* OFFICIAL BOOK BUTTON */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.open(p.url, "_blank");
+                  }}
+                  className="mt-2 w-full bg-blue-600 hover:bg-blue-700 py-1 rounded text-sm font-bold"
+                >
+                  Book Official
+                </button>
+              </div>
+            ))}
           </div>
-        )}
-      </motion.div>
+
+          {/* CALL TAXIS */}
+          <div className="grid grid-cols-2 gap-2">
+            {callTaxis.map((c) => (
+              <button
+                key={c.name}
+                onClick={() => window.open(`tel:${c.phone}`)}
+                className="bg-green-600 hover:bg-green-700 py-2 rounded-lg text-sm font-bold"
+              >
+                📞 {c.name}
+              </button>
+            ))}
+          </div>
+
+        </div>
+      </div>
     </div>
   );
 }

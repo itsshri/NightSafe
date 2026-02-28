@@ -18,6 +18,7 @@ import Lognav from "./Component/Lognav";
 import Lognav2 from "./Component/Lognav2";
 import AdvancedSafetyMap from "./Component/AdvancedSafetyMap";
 import Real from "./pages/Real";
+import Flow from "./pages/Flow";
 
 import { useEffect } from "react"; // ✅ make sure useEffect is imported
 import { ref, set } from "firebase/database";
@@ -43,11 +44,11 @@ function Router() {
       <Route path="/asm" component={AdvancedSafetyMap}/> 
       <Route path="/lognav" component={Lognav}/>
       <Route path="/lognav2" component={Lognav2}/> 
+      <Route path="/flow" component={Flow}/>
       <DestinationProvider>
       <Route path="/real" component={Real}/> 
       </DestinationProvider>
       
-
       <Route component={NotFound} />
     </Switch>
   );
