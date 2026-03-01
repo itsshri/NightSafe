@@ -18,17 +18,23 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@tailwindcss/vite": "^4.1.12",
     "@tanstack/react-query": "^5.85.5",
+    "bcryptjs": "^3.0.3",
     "chart.js": "^4.5.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
     "firebase": "^12.5.0",
     "framer-motion": "^12.23.24",
+    "jsonwebtoken": "^9.0.3",
     "leaflet": "^1.9.4",
     "leaflet-control-geocoder": "^3.3.1",
     "leaflet-routing-machine": "^3.2.12",
     "leaflet.heat": "^0.2.0",
     "lucide-react": "^0.541.0",
     "mapbox-gl": "^3.14.0",
+    "mongoose": "^9.2.3",
     "motion": "^12.23.12",
     "next-themes": "^0.4.6",
     "react": "^19.1.1",
@@ -58,8 +64,23 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
+    "nodemon": "^3.1.14",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
     "vite": "^7.1.2"
-  }
+  },
+  "description": "**NightSafe** is a real-time **night travel safety web application** designed to ensure user safety during late-night commutes. It provides **live route tracking**, **SOS alerts**, **safe cab verification**, and **community safety reporting**.  \r The system allows family members to securely monitor the traveler’s journey, ensuring peace of mind and immediate emergency support.",
+  "main": "eslint.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/itsshri/NightSafe.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/itsshri/NightSafe/issues"
+  },
+  "homepage": "https://github.com/itsshri/NightSafe#readme"
 }
+

@@ -24,42 +24,50 @@ const FamSign = () => {
     setSuccess("");
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    for (let key in formData) {
-      if (formData[key].trim() === "") {
-        setError("Please fill all fields before submitting.");
-        return;
-      }
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  for (let key in formData) {
+    if (formData[key].trim() === "") {
+      setError("Please fill all fields before submitting.");
+      return;
     }
+  }
 
-    // ✅ Save multiple users
-    let existingUsers = JSON.parse(localStorage.getItem("familyUsers")) || [];
-    existingUsers.push(formData);
-    localStorage.setItem("familyUsers", JSON.stringify(existingUsers));
-
-    // ✅ NEW: store current user name and location for header display
-    localStorage.setItem("currentUserName", formData.name);
-    localStorage.setItem("loggedInUser", formData.name);
-
-    // Optional: ensure header can find correct location
-    const userWithLocation = existingUsers.find(
-      (user) => user.name === formData.name
-    );
-    if (userWithLocation) {
-      console.log("Saved location:", userWithLocation.location);
-    }
-
-    setSuccess("Account created successfully! You can now log in.");
-    setFormData({
-      name: "",
-      phone: "",
-      memberType: "",
-      username: "",
-      password: "",
-      location: "",
+  try {
+    const response = await fetch("http://localhost:5000/api/family/signup", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData),
     });
-  };
+
+    const data = await response.json();
+
+    if (data.success) {
+      setSuccess("Account created successfully! You can now log in.");
+      setError("");
+
+      localStorage.setItem("currentUserName", formData.name);
+      localStorage.setItem("loggedInUser", formData.name);
+
+      setFormData({
+        name: "",
+        phone: "",
+        memberType: "",
+        username: "",
+        password: "",
+        location: "",
+      });
+    } else {
+      setError(data.message || "Signup failed");
+    }
+
+  } catch (err) {
+    setError("Server error. Please try again.");
+  }
+};
 
   return (
     <>
