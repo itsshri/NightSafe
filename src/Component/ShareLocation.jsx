@@ -28,8 +28,17 @@ export default function ShareLocation() {
   const [timeline, setTimeline] = useState([]);
   const emergencySentRef = useRef(false);
 
-  const emergencyNumbers =
-    "6374627679,9384750414,6380368540";
+  // NEW
+  const [flash, setFlash] = useState(false);
+  const capturingRef = useRef(false);
+
+  const emergencyNumbers = [
+    "6374627679",
+    "9384750414",
+    "6380368540",
+  ];
+
+  const policeWhatsApp = "919999999999"; // replace
 
   const addTimeline = (msg) => {
     setTimeline((prev) => [
@@ -101,7 +110,7 @@ export default function ShareLocation() {
     return () => clearInterval(t);
   }, [active]);
 
-  /* ================= AUTO EMERGENCY ================= */
+  /* ================= GROUP SMS ================= */
   const sendEmergencySMS = () => {
     if (!coords) return;
 
@@ -116,9 +125,87 @@ Live Tracking:
 ${mapLink}
     `.trim();
 
+    const recipients = emergencyNumbers.join(",");
+
     window.open(
-      `sms:${emergencyNumbers}?body=${encodeURIComponent(message)}`
+      `sms:${recipients}?body=${encodeURIComponent(message)}`
     );
+  };
+
+  /* ================= POLICE ALERT ================= */
+  const sendPoliceAlert = () => {
+    if (!coords) return;
+
+    const mapLink = `https://maps.google.com/?q=${coords.lat},${coords.lng}`;
+
+    const msg = `
+🚨 NIGHTSAFE ALERT 🚨
+
+Possible unsafe situation detected.
+
+Live Location:
+${mapLink}
+
+Evidence image captured.
+    `.trim();
+
+    window.open(
+      `https://wa.me/${policeWhatsApp}?text=${encodeURIComponent(msg)}`,
+      "_blank"
+    );
+  };
+
+  /* ================= CAPTURE EVIDENCE ================= */
+  const dropEvidence = async (auto = false) => {
+    if (capturingRef.current) return;
+
+    try {
+      capturingRef.current = true;
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" },
+      });
+
+      const video = videoRef.current;
+      video.srcObject = stream;
+
+      await new Promise((res) => {
+        video.onloadedmetadata = () => {
+          video.play();
+          res();
+        };
+      });
+
+      await new Promise((r) => setTimeout(r, 600));
+
+      // FLASH
+      setFlash(true);
+      setTimeout(() => setFlash(false), 200);
+
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      canvas.getContext("2d").drawImage(video, 0, 0);
+
+      const img = canvas.toDataURL("image/jpeg");
+      setCapturedImage(img);
+
+      addTimeline(
+        auto
+          ? "AUTO emergency evidence captured"
+          : "Manual evidence captured"
+      );
+
+      sendPoliceAlert();
+
+      stream.getTracks().forEach((t) => t.stop());
+    } catch (err) {
+      console.error(err);
+      addTimeline("Camera capture failed");
+    } finally {
+      capturingRef.current = false;
+    }
   };
 
   /* ================= MOVEMENT ENGINE ================= */
@@ -160,40 +247,21 @@ ${mapLink}
         addTimeline("Emergency SMS prepared");
         sendEmergencySMS();
       }
+
+      // AUTO CAPTURE ON HIGH RISK
+      dropEvidence(true);
     }
 
     lastCoordsRef.current = coords;
   }, [coords, elapsed, active]);
 
-  /* ================= EVIDENCE ================= */
-  const dropEvidence = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "user" },
-    });
-
-    const video = videoRef.current;
-    video.srcObject = stream;
-
-    await new Promise((res) => {
-      video.onloadedmetadata = () => {
-        video.play();
-        res();
-      };
-    });
-
-    const canvas = canvasRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext("2d").drawImage(video, 0, 0);
-
-    setCapturedImage(canvas.toDataURL("image/jpeg"));
-    addTimeline("Evidence captured");
-
-    stream.getTracks().forEach((t) => t.stop());
-  };
-
   return (
     <div className="w-full min-h-screen bg-black flex justify-center p-6">
+
+      {/* FLASH */}
+      {flash && (
+        <div className="fixed inset-0 bg-white z-50 animate-pulse pointer-events-none" />
+      )}
 
       <div className="w-full max-w-4xl bg-zinc-950 border border-red-500/30 rounded-3xl p-8 text-white">
 
@@ -214,7 +282,6 @@ ${mapLink}
           </div>
         )}
 
-        {/* ACTIVATE BUTTON */}
         <button
           onClick={active ? deactivateMode : activateMode}
           className="w-full py-3 rounded-xl bg-red-600 font-bold mb-4"
@@ -222,7 +289,6 @@ ${mapLink}
           {active ? "Deactivate Safely" : "Activate Silently"}
         </button>
 
-        {/* STATUS COLOR LOADER */}
         {active && (
           <div className="mb-5">
             <p className="text-xs mb-2 text-gray-300">
@@ -238,7 +304,6 @@ ${mapLink}
           </div>
         )}
 
-        {/* TIMELINE */}
         {active && (
           <div className="mb-5">
             <h3 className="font-bold mb-2 flex items-center gap-2">
@@ -258,9 +323,10 @@ ${mapLink}
 
         {active && !capturedImage && (
           <button
-            onClick={dropEvidence}
-            className="w-full py-3 rounded-xl bg-white/10"
+            onClick={() => dropEvidence(false)}
+            className="w-full py-3 rounded-xl bg-white/10 flex justify-center gap-2"
           >
+            <Camera className="h-4 w-4" />
             Capture Evidence
           </button>
         )}
@@ -269,6 +335,7 @@ ${mapLink}
           <img
             src={capturedImage}
             className="rounded-xl border border-red-500/40 mt-4"
+            alt="Evidence"
           />
         )}
       </div>
