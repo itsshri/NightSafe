@@ -13,6 +13,8 @@ import { db } from "../firebaseConfig";
 import { motion } from "framer-motion";
 import QRCode from "react-qr-code";
 import AppHeader from "./AppHeader";
+import {AnimatePresence } from "framer-motion";
+// import { motion, AnimatePresence } from "framer-motion";
 import {
   MapContainer,
   TileLayer,
@@ -424,62 +426,369 @@ const GuardianView = () => {
   );
 };
 
-  const RiskView = () => (
-    <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800">
-      <h2 className="text-xl font-bold mb-3">AI Risk Engine</h2>
-      <div className="w-full h-5 bg-gray-800 rounded-full overflow-hidden">
-        <motion.div
-          initial={{ width:0 }}
-          animate={{ width:`${riskScore}%` }}
-          className="h-5 bg-red-500"
+// HOTEL STAY AND POLICE STATION FINDER  
+const RiskView = () => {
+  const [places, setPlaces] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loaded, setLoaded] = useState(false);
+  const [filter, setFilter] = useState("ALL");
+
+  /* ===========================
+     DISTANCE
+  ============================ */
+  const calcDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) ** 2;
+
+    return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(1);
+  };
+
+  /* ===========================
+     ICONS + COLORS
+  ============================ */
+  const meta = {
+    "Hotel Stay": { icon: "🏨", color: "bg-blue-500/20 text-blue-300" },
+    Restaurant: { icon: "🍽️", color: "bg-orange-500/20 text-orange-300" },
+    Cafe: { icon: "☕", color: "bg-yellow-500/20 text-yellow-300" },
+    "Police Station": { icon: "👮", color: "bg-red-500/20 text-red-300" },
+    "Bus Stand": { icon: "🚌", color: "bg-green-500/20 text-green-300" },
+    "Train Station": { icon: "🚆", color: "bg-purple-500/20 text-purple-300" },
+    "Metro Station": { icon: "🚇", color: "bg-cyan-500/20 text-cyan-300" },
+  };
+
+  /* ===========================
+     IMAGE POOLS
+  ============================ */
+  const imagePools = {
+    hotel: [
+      "https://images.unsplash.com/photo-1566073771259-6a8506099945",
+      "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa",
+      "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb",
+    ],
+    restaurant: [
+      "https://images.unsplash.com/photo-1559339352-11d035aa65de",
+      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4",
+      "https://images.unsplash.com/photo-1555396273-367ea4eb4db5",
+    ],
+    cafe: [
+      "https://images.unsplash.com/photo-1509042239860-f550ce710b93",
+      "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085",
+    ],
+    police: [
+      "https://images.unsplash.com/photo-1581093458791-9d42e7f2f6b0",
+    ],
+    bus: [
+      "https://images.unsplash.com/photo-1519003722824-194d4455a60c",
+    ],
+    train: [
+      "https://images.unsplash.com/photo-1474487548417-781cb71495f3",
+    ],
+    metro: [
+      "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df",
+    ],
+  };
+
+  /* ===========================
+     FETCH (ONCE ONLY)
+  ============================ */
+  useEffect(() => {
+    if (!myLoc || loaded) return;
+
+    const [lat, lng] = myLoc;
+
+    const fetchPlaces = async () => {
+      try {
+        const query = `
+          [out:json];
+          (
+            node["tourism"="hotel"](around:5000,${lat},${lng});
+            node["amenity"="restaurant"](around:5000,${lat},${lng});
+            node["amenity"="cafe"](around:5000,${lat},${lng});
+            node["amenity"="police"](around:5000,${lat},${lng});
+            node["amenity"="bus_station"](around:5000,${lat},${lng});
+            node["railway"="station"](around:5000,${lat},${lng});
+            node["railway"="subway_entrance"](around:5000,${lat},${lng});
+          );
+          out;
+        `;
+
+        const res = await fetch(
+          "https://overpass-api.de/api/interpreter",
+          { method: "POST", body: query }
+        );
+
+        const data = await res.json();
+
+        let results = (data.elements || [])
+          .filter((p) => p.tags?.name)
+          .map((p, i) => {
+            let type = "Hotel Stay";
+            let key = "hotel";
+
+            if (p.tags?.amenity === "restaurant") {
+              type = "Restaurant"; key = "restaurant";
+            } else if (p.tags?.amenity === "cafe") {
+              type = "Cafe"; key = "cafe";
+            } else if (p.tags?.amenity === "police") {
+              type = "Police Station"; key = "police";
+            } else if (p.tags?.amenity === "bus_station") {
+              type = "Bus Stand"; key = "bus";
+            } else if (p.tags?.railway === "station") {
+              type = "Train Station"; key = "train";
+            } else if (p.tags?.railway === "subway_entrance") {
+              type = "Metro Station"; key = "metro";
+            }
+
+            const pool = imagePools[key];
+            const image = pool[i % pool.length];
+
+            return {
+              id: i,
+              name: p.tags.name,
+              type,
+              distance: calcDistance(lat, lng, p.lat, p.lon),
+              lat: p.lat,
+              lon: p.lon,
+              image,
+            };
+          });
+
+        results.sort((a, b) => a.distance - b.distance);
+        setPlaces(results.slice(0, 30));
+      } finally {
+        setLoading(false);
+        setLoaded(true);
+      }
+    };
+
+    fetchPlaces();
+  }, [myLoc, loaded]);
+
+  const navigateTo = (lat, lon) => {
+    window.open(
+      `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`,
+      "_blank"
+    );
+  };
+
+  /* ===========================
+     FILTERED DATA
+  ============================ */
+  const filtered =
+    filter === "ALL"
+      ? places
+      : places.filter((p) => p.type === filter);
+
+  /* ===========================
+     UI
+  ============================ */
+  return (
+    <div className="bg-gradient-to-br from-black via-gray-950 to-black p-6 rounded-2xl border border-gray-800">
+
+      <h2 className="text-2xl font-bold text-indigo-400 mb-4">
+        Nearby Safety Navigator
+      </h2>
+
+      {/* FILTER CHIPS */}
+      <div className="flex gap-2 mb-5 flex-wrap">
+        {["ALL", ...Object.keys(meta)].map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`px-3 py-1 rounded-full text-sm border ${
+              filter === f
+                ? "bg-indigo-600 border-indigo-500"
+                : "bg-gray-900 border-gray-700"
+            }`}
+          >
+            {f}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="text-gray-400">Loading nearby places...</div>
+      ) : (
+        <div className="grid lg:grid-cols-3 gap-6">
+          {filtered.map((p, i) => (
+            <motion.div
+              key={p.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.03 }}
+              whileHover={{ scale: 1.04 }}
+              className="relative rounded-2xl overflow-hidden group bg-black/40 border border-gray-800 shadow-xl"
+            >
+              <img
+                src={p.image}
+                alt={p.name}
+                className="h-56 w-full object-cover group-hover:scale-110 transition duration-500"
+              />
+
+              {/* gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+
+              <div className="absolute bottom-0 p-4 w-full">
+                <span
+                  className={`text-xs px-2 py-1 rounded-full ${meta[p.type]?.color}`}
+                >
+                  {meta[p.type]?.icon} {p.type}
+                </span>
+
+                <h3 className="text-white font-bold mt-2">{p.name}</h3>
+
+                <p className="text-gray-300 text-sm">
+                  {p.distance} km away
+                </p>
+
+                <button
+                  onClick={() => navigateTo(p.lat, p.lon)}
+                  className="mt-3 w-full py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition"
+                >
+                  Navigate
+                </button>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+
+const AnalyticsView = () => {
+  const [search, setSearch] = useState("");
+
+  const filtered = history.filter((h) =>
+    h.cabId?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="bg-gradient-to-br from-gray-900 via-gray-950 to-black border border-gray-800 rounded-2xl p-6 shadow-2xl">
+
+      {/* HEADER */}
+      <div className="flex justify-between items-center mb-5">
+        <div>
+          <h2 className="text-2xl font-bold text-indigo-400">
+            Trip Analytics
+          </h2>
+          <p className="text-gray-400 text-sm">
+            Monitoring recent verification activity
+          </p>
+        </div>
+
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search Cab ID..."
+          className="bg-black/40 border border-gray-700 px-3 py-2 rounded-lg text-sm w-64 focus:border-indigo-500 outline-none"
         />
       </div>
-      <p className="mt-2">Risk Score: {Math.round(riskScore)}%</p>
+
+      {/* TABLE */}
+      <div className="overflow-hidden rounded-xl border border-gray-800">
+        <div className="max-h-[420px] overflow-y-auto">
+
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 bg-gray-950 border-b border-gray-800">
+              <tr className="text-gray-400">
+                <th className="text-left p-3">Cab ID</th>
+                <th className="text-left p-3">Status</th>
+                <th className="text-left p-3">Time</th>
+                <th className="text-left p-3">Action</th>
+              </tr>
+            </thead>
+
+<tbody>
+  <AnimatePresence mode="popLayout">
+    {filtered.length === 0 ? (
+      <motion.tr
+        key="empty"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        <td colSpan="4" className="text-center p-8 text-gray-500">
+          No trips found
+        </td>
+      </motion.tr>
+    ) : (
+      filtered.map((h) => (
+        <motion.tr
+          key={h.tripKey}
+          layout
+          initial={{ opacity: 0, scale: 0.96, y: 12 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{
+            opacity: 0,
+            x: 120,
+            scale: 0.85,
+            transition: { duration: 0.25 }
+          }}
+          whileHover={{
+            scale: 1.01,
+            backgroundColor: "rgba(255,255,255,0.04)",
+          }}
+          transition={{ type: "spring", stiffness: 260, damping: 20 }}
+          className="border-b border-gray-900"
+        >
+          <td className="p-3 font-mono text-indigo-300">
+            {h.cabId}
+          </td>
+
+          <td className="p-3">
+            <span
+              className={`px-3 py-1 rounded-full text-xs ${
+                h.verified
+                  ? "bg-green-500/20 text-green-400"
+                  : "bg-red-500/20 text-red-400"
+              }`}
+            >
+              {h.verified ? "Verified" : "Alert"}
+            </span>
+          </td>
+
+          <td className="p-3 text-gray-300">
+            {new Date(h.startTime).toLocaleString()}
+          </td>
+
+          <td className="p-3">
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.08 }}
+              onClick={() => deleteTrip(h.tripKey)}
+              className="px-3 py-1 rounded bg-red-600 hover:bg-red-500 text-xs"
+            >
+              Delete
+            </motion.button>
+          </td>
+        </motion.tr>
+      ))
+    )}
+  </AnimatePresence>
+</tbody>
+
+          </table>
+        </div>
+      </div>
     </div>
   );
-
-  const AnalyticsView = () => (
-    <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800">
-      <h2 className="text-xl font-bold mb-4">Trip Analytics</h2>
-
-      <table className="w-full text-sm">
-        <thead className="border-b border-gray-700 text-gray-400">
-          <tr>
-            <th className="text-left p-2">Cab</th>
-            <th>Status</th>
-            <th>Time</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {history.map((h)=>(
-            <tr key={h.tripKey} className="border-b border-gray-800">
-              <td className="p-2">{h.cabId}</td>
-              <td className={h.verified?"text-green-400":"text-red-400"}>
-                {h.verified?"Verified":"Alert"}
-              </td>
-              <td>{new Date(h.startTime).toLocaleString()}</td>
-              <td>
-                <button
-                  onClick={()=>deleteTrip(h.tripKey)}
-                  className="px-2 py-1 bg-red-700 rounded text-xs"
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+};
 
   /* FIXED HERE ONLY */
   const views = {
     verification: VerificationView(),
     guardian: GuardianView(),
-    risk: RiskView(),
-    analytics: AnalyticsView(),
+     risk: <RiskView />,
+      analytics: <AnalyticsView />,
   };
 
   return (
@@ -489,13 +798,13 @@ const GuardianView = () => {
 
         <aside className="w-72 bg-gray-950 border-r border-gray-800 p-6">
           <h2 className="text-2xl font-bold text-indigo-400 mb-6">
-            NIGHTSAFE PRO
+           NIGHT SHIELD
           </h2>
 
           {[
             ["verification","🚖 Live Verification"],
             ["guardian","🛡 Guardian Monitor"],
-            ["risk","🧠 AI Risk Engine"],
+            ["risk","🧠 Safepoint Locator"],
             ["analytics","📊 Analytics"],
           ].map(([k,label])=>(
             <button
