@@ -14,7 +14,7 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-
+import { Tooltip } from "react-leaflet";
 
 /*
   AdvancedSafetyMap
@@ -56,6 +56,20 @@ const friendIcon = L.divIcon({
   iconAnchor: [6, 6],
 });
 
+const alertIcon = L.divIcon({
+  html: `<div style="
+    width:16px;
+    height:16px;
+    background:#ef4444;
+    border-radius:50%;
+    border:3px solid #fca5a5;
+    box-shadow:0 0 10px rgba(239,68,68,0.9);
+  "></div>`,
+  className: "",
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
+});
+
 function Recenter({ when }) {
   const map = useMap();
   useEffect(() => {
@@ -80,16 +94,16 @@ export default function AdvancedSafetyMap({ userId = "ShrijithR", watchFriends =
   const [allRoutes, setAllRoutes] = useState({}); // { userId: [{lat,lng,ts}, ...] }
 
   // community feed
-  const [alertsList, setAlertsList] = useState([]); // array of {id, userId, msg, lat,lng,ts}
-  const [newAlertMsg, setNewAlertMsg] = useState("");
-
+// STATES
+const [alertsList, setAlertsList] = useState([]);
+const [newAlertMsg, setNewAlertMsg] = useState("");
+const [showPostSuccess, setShowPostSuccess] = useState(false);
   // voice SOS
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef(null);
   const [sosActive, setSosActive] = useState(false);
 
   // UI states
-  const [showPostSuccess, setShowPostSuccess] = useState(false);
 
   // === get live location (for centering / optional current location) ===
   useEffect(() => {
@@ -301,46 +315,80 @@ export default function AdvancedSafetyMap({ userId = "ShrijithR", watchFriends =
   };
 
   // === Community feed posting ===
-  const postAlert = () => {
-    if (!newAlertMsg.trim() || !myLocation) return;
-    const alertsRef = push(ref(db, "alerts"));
-    set(alertsRef, {
-      userId,
-      msg: newAlertMsg.trim(),
-      lat: myLocation[0],
-      lng: myLocation[1],
-      ts: Date.now(),
-    })
-      .then(() => {
-        setNewAlertMsg("");
-        setShowPostSuccess(true);
-        setTimeout(() => setShowPostSuccess(false), 2500);
-      })
-      .catch((e) => console.warn("post alert failed", e));
-  };
 
-  // client-side cleanup: remove old alerts older than 48h (optional)
-  useEffect(() => {
-    // runs once per minute to remove stale alerts (only for demo - server should handle this)
-    const interval = setInterval(async () => {
-      const cutoff = Date.now() - 48 * 60 * 60 * 1000;
-      const alertsRef = ref(db, "alerts");
-      // naive: read current alerts and remove aged ones
-      onValue(
-        alertsRef,
-        (snap) => {
-          const val = snap.val() || {};
-          Object.entries(val).forEach(([key, v]) => {
-            if ((v.ts || 0) < cutoff) {
-              remove(ref(db, `alerts/${key}`)).catch(() => {});
-            }
-          });
-        },
-        { onlyOnce: true }
-      );
-    }, 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
+
+  // GET ALERTS
+// =======================
+const fetchAlerts = async () => {
+  try {
+    const res = await fetch("http://localhost:5000/api/alerts");
+    const data = await res.json();
+
+    if (data.success) {
+      setAlertsList(data.alerts);
+    }
+  } catch (err) {
+    console.error("Failed to load alerts", err);
+  }
+  console.log("Alerts received:", data.alerts);
+};
+
+// load alerts when component loads
+useEffect(() => {
+  fetchAlerts();
+}, []);
+
+
+// =======================
+// POST ALERT
+// =======================
+const postAlert = async () => {
+
+  if (!newAlertMsg.trim()) return;
+
+  try {
+
+    const res = await fetch("http://localhost:5000/api/alerts", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        userId,
+        msg: newAlertMsg,
+        latitude: myLocation?.[0],
+        longitude: myLocation?.[1]
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      setNewAlertMsg("");
+      fetchAlerts();
+    }
+
+  } catch (err) {
+    console.error(err);
+  }
+
+};
+
+// =======================
+// DELETE ALERT
+// =======================
+const deleteAlert = async (id) => {
+  try {
+    await fetch(`http://localhost:5000/api/alerts/${id}`, {
+      method: "DELETE"
+    });
+
+    fetchAlerts(); // refresh list
+  } catch (err) {
+    console.error("Delete failed", err);
+  }
+};
+
 
   // dynamic colors and small UI helpers
   const smallCard = "p-3 rounded-xl bg-gray-800/60 border border-gray-700 shadow-sm";
@@ -472,33 +520,31 @@ export default function AdvancedSafetyMap({ userId = "ShrijithR", watchFriends =
   <div className="max-h-56 overflow-auto rounded-md divide-y divide-gray-800">
     {alertsList.slice().reverse().map((a) => (
       <div
-        key={a.id}
+      key={a._id}
         className="p-2 flex flex-col hover:bg-gray-800/60 transition-all duration-200"
       >
         <div className="flex justify-between items-center">
           <span className="text-sm font-medium">Reported by - {a.userId}</span>
           <span className="text-xs text-gray-400">
-            {new Date(a.ts).toLocaleTimeString()}
+            {new Date(a.createdAt).toLocaleTimeString()}
           </span>
         </div>
         <div className="text-xs text-gray-300 mt-1">{a.msg}</div>
 
         {/* 🗑️ Delete Button (only for your posts) */}
-        {a.userId === userId && (
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => {
-              if (window.confirm("Delete this alert?")) {
-                remove(ref(db, `alerts/${a.id}`))
-                  .then(() => console.log("Alert deleted:", a.id))
-                  .catch((e) => console.warn("Delete failed:", e));
-              }
-            }}
-            className="self-end mt-2 px-3 py-1 text-xs rounded-md bg-red-600/80 hover:bg-red-700 text-white font-semibold transition-colors"
-          >
-            Delete
-          </motion.button>
-        )}
+     {a.userId === userId && (
+  <motion.button
+    whileTap={{ scale: 0.9 }}
+    onClick={() => {
+      if (window.confirm("Delete this alert?")) {
+        deleteAlert(a._id);
+      }
+    }}
+    className="self-end mt-2 px-3 py-1 text-xs rounded-md bg-red-600/80 hover:bg-red-700 text-white font-semibold transition-colors"
+  >
+    Delete
+  </motion.button>
+)}
       </div>
     ))}
     {alertsList.length === 0 && (
@@ -549,25 +595,39 @@ export default function AdvancedSafetyMap({ userId = "ShrijithR", watchFriends =
               })}
 
               {/* show alerts as markers */}
-              {alertsList.map((a) => (
-                <Marker
-                  key={a.id}
-                  position={[a.lat, a.lng]}
-                  icon={L.divIcon({
-                    html: `<div class="text-xs px-2 py-1 rounded bg-red-600 text-white font-semibold">${a.msg.length > 16 ? a.msg.slice(0, 14) + "…" : a.msg}</div>`,
-                    className: "",
-                    iconSize: [120, 30],
-                  })}
-                >
-                  <Popup>
-                    <div className="text-sm">
-                      <div className="font-semibold">{a.userId}</div>
-                      <div className="text-xs">{a.msg}</div>
-                      <div className="text-xs text-gray-400 mt-1">{new Date(a.ts).toLocaleString()}</div>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
+{alertsList.map((a) => {
+
+  if (!a.latitude || !a.longitude) return null;
+
+  return (
+    <Marker
+      key={a._id}
+      position={[a.latitude, a.longitude]}
+      icon={alertIcon}
+    >
+
+      {/* always visible text */}
+      <Tooltip permanent direction="top" offset={[0, -10]}>
+        🚨 {a.msg}
+      </Tooltip>
+
+      {/* popup when clicked */}
+      <Popup>
+        <div className="text-sm">
+          <strong>{a.userId}</strong>
+          <br />
+          {a.msg}
+          <br />
+          <span style={{ fontSize: "11px", color: "#888" }}>
+            {new Date(a.createdAt).toLocaleTimeString()}
+          </span>
+        </div>
+      </Popup>
+
+    </Marker>
+  );
+
+})}
 
               {/* small polylines for myRoutePoints (local copy) for immediate visual (optional) */}
               {myRoutePoints.length >= 2 && (
